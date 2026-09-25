@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Study Planner - DSA Scheduling Dashboard</title>
+    <!-- Modern typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h2>Smart Study</h2>
+                    <span class="badge-dsa">DSA Engine</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-view="dashboard">
+                    <span class="icon">📊</span>
+                    <span class="label">Dashboard</span>
+                </button>
+                <button class="nav-item" data-view="subjects">
+                    <span class="icon">📚</span>
+                    <span class="label">Subjects & Topics</span>
+                </button>
+                <button class="nav-item" data-view="schedule">
+                    <span class="icon">📅</span>
+                    <span class="label">Study Schedule</span>
+                </button>
+                <button class="nav-item" data-view="prerequisites">
+                    <span class="icon">🔗</span>
+                    <span class="label">Prerequisites</span>
+                </button>
+                <button class="nav-item" data-view="progress">
+                    <span class="icon">🎯</span>
+                    <span class="label">Progress</span>
+                </button>
+                <button class="nav-item" data-view="exams">
+                    <span class="icon">📝</span>
+                    <span class="label">Exams</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="dsa-indicator">
+                    <span class="dot"></span> Max-Heap + Kahn's Algo Active
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                    <p id="page-subtitle">Track your study progress and generate optimized greedy schedules.</p>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="app.refreshAllData()">
+                        <span class="icon">🔄</span> Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="app.switchView('schedule')">
+                        <span class="icon">🚀</span> Generate Schedule
+                    </button>
+                </div>
+            </header>
+
+            <!-- Toast Container -->
+            <div id="toast-container" class="toast-container"></div>
+
+            <!-- View 1: Dashboard Overview -->
+            <section id="view-dashboard" class="view-section active">
+                <div class="metrics-grid">
+                    <div class="metric-card card-indigo">
+                        <div class="metric-icon">⏱️</div>
+                        <div class="metric-data">
+                            <span class="metric-label">Total Study Hours</span>
+                            <h3 id="stat-total-hours">0.0 hrs</h3>
+                        </div>
+                    </div>
+
+                    <div class="metric-card card-emerald">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-data">
+                            <span class="metric-label">Completed Hours</span>
+                            <h3 id="stat-completed-hours">0.0 hrs</h3>
+                        </div>
+                    </div>
+
+                    <div class="metric-card card-amber">
+                        <div class="metric-icon">📌</div>
+                        <div class="metric-data">
+                            <span class="metric-label">Pending Topics</span>
+                            <h3 id="stat-pending-topics">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="metric-card card-rose">
+                        <div class="metric-icon">🎯</div>
+                        <div class="metric-data">
+                            <span class="metric-label">Overall Completion</span>
+                            <h3 id="stat-completion-pct">0%</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Today's Sessions Panel -->
+                    <div class="panel card">
+                        <div class="panel-header">
+                            <h3>📅 Today's Study Tasks</h3>
+                            <span class="badge badge-info" id="today-date-badge">Today</span>
+                        </div>
+                        <div id="dashboard-sessions-list" class="sessions-timeline">
+                            <div class="empty-state">
+                                <p>No study sessions generated for today yet.</p>
+                                <button class="btn btn-sm btn-primary" onclick="app.switchView('schedule')">Generate Plan</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Exams Panel -->
+                    <div class="panel card">
+                        <div class="panel-header">
+                            <h3>📝 Upcoming Exams</h3>
+                            <button class="btn btn-sm btn-secondary" onclick="app.openModal('modal-exam')">+ Add Exam</button>
+                        </div>
+                        <div id="dashboard-exams-list" class="exams-list">
+                            <div class="empty-state">
+                                <p>No upcoming exams added.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View 2: Subjects & Topics -->
+            <section id="view-subjects" class="view-section">
+                <div class="section-toolbar">
+                    <div class="search-box">
+                        <input type="text" id="topic-search-input" placeholder="Search subjects or topics..." onkeyup="app.filterTopics()">
+                    </div>
+                    <div class="toolbar-btns">
+                        <button class="btn btn-secondary" onclick="app.openModal('modal-subject')">+ Add Subject</button>
+                        <button class="btn btn-primary" onclick="app.openModal('modal-topic')">+ Add Topic</button>
+                    </div>
+                </div>
+
+                <div id="subjects-container" class="subjects-container">
+                    <div class="empty-state">
+                        <p>Loading subjects and topics...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View 3: Study Schedule Generator -->
+            <section id="view-schedule" class="view-section">
+                <div class="panel card schedule-config-card">
+                    <div class="panel-header">
+                        <h3>⚙️ Scheduler Configuration (Max Heap + Greedy Strategy)</h3>
+                    </div>
+                    <form id="form-generate-schedule" onsubmit="app.handleGenerateSchedule(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="sched-hours">Available Daily Study Hours</label>
+                                <input type="number" id="sched-hours" min="0.5" max="24" step="0.5" value="4.0" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sched-date">Target Schedule Date</label>
+                                <input type="date" id="sched-date" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sched-duration">Max Slot Duration (hrs)</label>
+                                <select id="sched-duration">
+                                    <option value="1.0">1.0 Hour</option>
+                                    <option value="1.5" selected>1.5 Hours (Pomodoro Max)</option>
+                                    <option value="2.0">2.0 Hours</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sched-start">Start Time</label>
+                                <input type="time" id="sched-start" value="09:00" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-generate">
+                                <span class="icon">🚀</span> Generate Optimized Schedule
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Schedule Results Output -->
+                <div id="schedule-results-container" class="schedule-results">
+                    <div class="panel card">
+                        <div class="panel-header">
+                            <h3>📋 Generated Study Plan</h3>
+                            <div id="schedule-meta-badges"></div>
+                        </div>
+                        <div id="schedule-sessions-timeline" class="sessions-timeline">
+                            <div class="empty-state">
+                                <p>Set your available study hours above and click "Generate Optimized Schedule".</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View 4: Prerequisites Visualization -->
+            <section id="view-prerequisites" class="view-section">
+                <div class="panel card">
+                    <div class="panel-header">
+                        <h3>🔗 Topic Prerequisites & Topological Sort Order</h3>
+                        <span class="badge badge-info">Kahn's Algorithm Order</span>
+                    </div>
+
+                    <div id="cycle-alert-container"></div>
+
+                    <div class="topological-sort-banner">
+                        <strong>Kahn's Topological Ordering:</strong>
+                        <div id="topo-order-display" class="topo-chips">
+                            <span class="chip">No topics loaded</span>
+                        </div>
+                    </div>
+
+                    <div id="prerequisites-list-container" class="prereq-list">
+                        <div class="empty-state">
+                            <p>Loading topic dependencies...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View 5: Progress Tracking -->
+            <section id="view-progress" class="view-section">
+                <div class="panel card">
+                    <div class="panel-header">
+                        <h3>🎯 Overall Topic Completion & Progress Tracking</h3>
+                    </div>
+
+                    <div class="progress-bar-large">
+                        <div class="progress-fill" id="overall-progress-fill" style="width: 0%;"></div>
+                        <span class="progress-text" id="overall-progress-text">0% Complete</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Topic</th>
+                                    <th>Difficulty</th>
+                                    <th>Importance</th>
+                                    <th>Est. Hours</th>
+                                    <th>Remaining Hours</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="progress-table-body">
+                                <tr>
+                                    <td colspan="8" class="text-center">Loading progress data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View 6: Exams -->
+            <section id="view-exams" class="view-section">
+                <div class="section-toolbar">
+                    <h2>Exam Management</h2>
+                    <button class="btn btn-primary" onclick="app.openModal('modal-exam')">+ Add Exam Date</button>
+                </div>
+
+                <div id="exams-container" class="exams-grid">
+                    <div class="empty-state">
+                        <p>No exams configured.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL 1: Add Subject -->
+    <div id="modal-subject" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add New Subject</h3>
+                <button class="modal-close" onclick="app.closeModal('modal-subject')">✕</button>
+            </div>
+            <form onsubmit="app.handleCreateSubject(event)">
+                <div class="form-group">
+                    <label for="subj-name">Subject Name</label>
+                    <input type="text" id="subj-name" placeholder="e.g. Data Structures & Algorithms" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-subject')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Add Topic -->
+    <div id="modal-topic" class="modal-overlay">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3>Add New Topic</h3>
+                <button class="modal-close" onclick="app.closeModal('modal-topic')">✕</button>
+            </div>
+            <form onsubmit="app.handleCreateTopic(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="topic-subject">Subject</label>
+                        <select id="topic-subject" required>
+                            <option value="">-- Select Subject --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="topic-name">Topic Name</label>
+                        <input type="text" id="topic-name" placeholder="e.g. Graph Traversal (BFS/DFS)" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="topic-difficulty">Difficulty (1 - Easy, 5 - Hard)</label>
+                        <select id="topic-difficulty" required>
+                            <option value="1">1 - Very Easy</option>
+                            <option value="2">2 - Easy</option>
+                            <option value="3" selected>3 - Medium</option>
+                            <option value="4">4 - Hard</option>
+                            <option value="5">5 - Very Hard</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="topic-importance">Importance (1 - Low, 5 - Vital)</label>
+                        <select id="topic-importance" required>
+                            <option value="1">1 - Low</option>
+                            <option value="2">2 - Moderate</option>
+                            <option value="3" selected>3 - Important</option>
+                            <option value="4">4 - Very Important</option>
+                            <option value="5">5 - Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="topic-hours">Estimated Study Hours</label>
+                        <input type="number" id="topic-hours" min="0.5" max="100" step="0.5" value="2.0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="topic-exam-date">Exam Date (Optional)</label>
+                        <input type="date" id="topic-exam-date">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="topic-prereqs">Prerequisites (Optional - Ctrl/Cmd click to select multiple)</label>
+                    <select id="topic-prereqs" multiple class="select-multiple">
+                        <!-- Populated via JS -->
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-topic')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Topic</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Add Exam -->
+    <div id="modal-exam" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add Subject Exam Date</h3>
+                <button class="modal-close" onclick="app.closeModal('modal-exam')">✕</button>
+            </div>
+            <form onsubmit="app.handleCreateExam(event)">
+                <div class="form-group">
+                    <label for="exam-subject">Subject</label>
+                    <select id="exam-subject" required>
+                        <option value="">-- Select Subject --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="exam-date">Exam Date</label>
+                    <input type="date" id="exam-date" required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeModal('modal-exam')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Exam</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
